@@ -1,2 +1,1 @@
-# project
-project
+# VTSU 3D Technology Summer Institute P5.js project template.
