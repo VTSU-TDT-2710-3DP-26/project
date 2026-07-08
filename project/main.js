@@ -3,50 +3,76 @@ import { drawAxes } from '@/utils/axes.js';
 import { vector } from "@/utils/vec3.js";
 
 // Variables 
-const length = 7
-const width = 7
+const length = 20;
+const width = 20;
 let position = vector(0, -0.2, 0);
 let velocity = vector(0, 0, 0);
 let gravity = vector(0, 9.8, 0);
+let ot = 0;
+let cam;
+const EYE_HEIGHT = -45;
+const LOOK_DISTANCE = 100;
+const WORLDSCALE = 2;
+let stonewall;
+let tile;
 let grid = [
-    [2, 1, 1, 1, 1, 1, 3],
-    [0, 1, 1, 2, 5, 0, 3],
-    [2, 0, 0, 0, 1, 0, 3],
-    [0, 5, 2, 1, 0, 0, 3],
-    [0, 1, 5, 0, 2, 5, 3],
-    [0, 1, 1, 0, 1, 1, 3],
-    [4, 4, 4, 4, 4, 4, 7],
-
+    [2, 1, 1, 1, 2, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 3],
+    [0, 1, 1, 0, 5, 0, 5, 0, 1, 1, 5, 1, 1, 0, 1, 0, 0, 0, 0, 3],
+    [0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 2, 0, 0, 0, 0, 0, 2, 5, 3],
+    [0, 1, 0, 2, 1, 0, 1, 1, 0, 0, 1, 5, 0, 1, 5, 0, 5, 0, 1, 3],
+    [2, 5, 0, 1, 5, 1, 1, 2, 5, 2, 1, 1, 5, 0, 0, 1, 1, 0, 0, 3],
+    [0, 0, 0, 2, 1, 2, 1, 1, 0, 2, 1, 1, 1, 0, 1, 0, 0, 1, 0, 3],
+    [0, 0, 1, 2, 5, 1, 5, 1, 5, 0, 0, 2, 5, 1, 1, 2, 1, 5, 1, 3],
+    [0, 2, 1, 0, 0, 0, 1, 0, 0, 5, 0, 1, 0, 0, 0, 1, 1, 0, 0, 3],
+    [0, 0, 1, 0, 2, 1, 1, 0, 1, 0, 1, 1, 2, 5, 0, 2, 5, 2, 5, 3],
+    [0, 1, 0, 1, 0, 2, 0, 0, 0, 0, 2, 0, 1, 1, 0, 1, 1, 0, 2, 3],
+    [2, 0, 0, 1, 0, 0, 2, 1, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 5, 3],
+    [0, 5, 1, 0, 2, 5, 0, 0, 0, 0, 0, 0, 5, 0, 2, 0, 0, 1, 0, 3],
+    [0, 0, 0, 0, 0, 1, 5, 0, 5, 0, 0, 1, 1, 2, 5, 0, 0, 0, 0, 3],
+    [0, 0, 0, 5, 1, 1, 0, 0, 1, 0, 1, 2, 5, 0, 1, 1, 0, 1, 1, 3],
+    [2, 5, 1, 1, 0, 2, 1, 1, 5, 2, 5, 1, 0, 2, 1, 0, 1, 1, 0, 3],
+    [2, 1, 1, 0, 1, 0, 0, 2, 1, 0, 0, 0, 1, 0, 1, 1, 2, 5, 0, 3],
+    [0, 1, 2, 2, 5, 0, 1, 5, 0, 0, 0, 0, 0, 2, 1, 0, 5, 1, 1, 3],
+    [0, 0, 5, 2, 1, 1, 1, 5, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 3],
+    [0, 1, 1, 5, 0, 0, 1, 1, 0, 5, 0, 1, 1, 1, 0, 1, 5, 0, 1, 3],
+    [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 7]
 ];
 
 
 export function preload() {
-
+    let w = new URL(import.meta.url).pathname;
+    w = w.substring(0, w.lastIndexOf("/") + 1);
+    stonewall = loadImage(w + "pixilwall.jpg");
+    let f = new URL(import.meta.url).pathname;
+    f = f.substring(0, f.lastIndexOf("/") + 1);
+    tile = loadImage(f + "floor.png");
 }
 
 export function setup() {
-    camera(300, -200, 700);
-
+    angleMode(DEGREES);
+    cam = createCamera();
+    window.mouseclicked = function () {
+        requestPointerLock();
+    }
 }
-
 export function draw(t, dt) {
+    scale(2);
     background(30, 30, 30);
-    orbitControl();
+    if (!fpv) {
+        orbitControl();
+    }
     ambientLight(80, 80, 80);
-
     directionalLight(255, 255, 255, 1, 1, -1);
-
     drawGrid();
     drawAxes();
-
     stroke(0);
     strokeWeight(1);
-    movePlayer2(t, dt);
+    movePlayer3(t, dt);
+    //pointLight(255, 255, 255, position.x, position.y, position.z);
     drawPlayer();
-    //  floor();
     wall();
     push();
-    translate(455, -10, 475);
+    translate(1768, -10, 1780);
     end();
     pop();
 
@@ -65,76 +91,150 @@ function wall() {
             push();
             translate(x * 100, 0, z * 100)
             if (grid[z][x] == 0) {
-                fill('black');
+                texture(tile);
                 box(100, 5, 100);
                 translate(-50, -25, 0)
-                fill('grey');
+                texture(stonewall);
                 box(5, 50, 100)
-
-
             }
             if (grid[z][x] == 1) {
-                fill('black');
+                texture(tile);
                 box(100, 5, 100);
                 translate(0, -25, -50)
-                fill('grey');
+                texture(stonewall);
                 box(100, 50, 5)
             }
             if (grid[z][x] == 2) {
-                fill('black');
+                texture(tile);
                 box(100, 5, 100);
                 push();
                 translate(-50, -25, 0)
-                fill('grey');
+                texture(stonewall);
                 box(5, 50, 100)
                 pop();
                 translate(0, -25, -50)
-                fill('grey');
+                texture(stonewall);
                 box(100, 50, 5);
-
-
             }
             if (grid[z][x] == 3) {
                 push();
                 translate(-50, -25, 0)
-                fill('grey');
+                texture(stonewall);
                 box(5, 50, 100)
                 pop();
-
             }
             if (grid[z][x] == 4) {
                 push();
                 translate(0, -25, -50)
                 rotateY(90);
-                fill('grey');
+                texture(stonewall);
                 box(5, 50, 100)
                 pop();
-
             }
             if (grid[z][x] == 5) {
-                fill('black');
+                texture(tile);
                 box(100, 5, 100);
             }
             if (grid[z][x] == 6) {
-                fill('black');
+                texture(tile);
                 box(100, 5, 100);
                 translate(-50, -25, 0)
                 rotateY(90);
-                fill('grey');
+                texture(stonewall);
                 box(100, 50, 5)
             }
-
             pop();
         }
-
-
-
     }
-
 }
 
-
-
+function movePlayer3(t, dt) {
+    let v = createVector(0, -100);
+    v.rotate(ot);
+    let forward = vector(v.x, 0, v.y);
+    v.rotate(90);
+    let right = vector(v.x, 0, v.y);
+    if (keyIsDown(65)) {
+        position = position.plus(right.times(-0.03));
+    }
+    if (keyIsDown(68)) {
+        position = position.plus(right.times(0.03));
+    }
+    if (keyIsDown(87)) {
+        position = position.plus(forward.times(0.03));
+    }
+    if (keyIsDown(83)) {
+        position = position.plus(forward.times(-0.03));
+    }
+    if (keyIsDown(RIGHT_ARROW)) {
+        ot += 2
+    }
+    if (keyIsDown(LEFT_ARROW)) {
+        ot -= 2
+    }
+    console.log("position", position.x, position.z);
+    let gridX = Math.floor((position.x + 75) / 150);
+    let gridZ = Math.floor((position.z + 75) / 150);
+    let localX = position.x - gridX * 150;
+    let localZ = position.z - gridZ * 150;
+    console.log("grid", gridX, gridZ);
+    let northWall = grid[gridZ][gridX] == 1 || grid[gridZ][gridX] == 2;
+    let southWall = grid[gridZ + 1][gridX] == 1 || grid[gridZ + 1][gridX] == 2;
+    let southWallblank = grid[gridZ + 1][gridX] == 4 || grid[gridZ + 1][gridX] == 2;
+    let westWall = grid[gridZ][gridX] == 0 || grid[gridZ][gridX] == 2;
+    let eastWall = grid[gridZ][gridX + 1] == 0 || grid[gridZ][gridX + 1] == 2;
+    let eastWallblank = grid[gridZ][gridX + 1] == 3 || grid[gridZ][gridX + 1] == 2;
+    let westWallblank = grid[gridZ][gridX] == 4 || grid[gridZ][gridX] == 2;
+    console.log("local", localX, localZ, "north", northWall, "south", southWall, "east", eastWall, "west", westWall);
+    if (northWall == true) {
+        if (localZ < -40) {
+            position.z = position.z + 5;
+            velocity = vector(0, 0, 0);
+        }
+    }
+    if (southWall == true) {
+        if (localZ > 40) {
+            position.z = position.z - 5;
+            velocity = vector(0, 0, 0);
+        }
+    }
+    if (southWallblank == true) {
+        if (localZ > 40) {
+            position.z = position.z - 5;
+            velocity = vector(0, 0, 0);
+        }
+    }
+    if (eastWall == true) {
+        if (localX > 40) {
+            position.x = position.x - 5;
+            velocity = vector(0, 0, 0);
+        }
+    }
+    if (westWall == true) {
+        if (localX < -40) {
+            position.x = position.x + 5;
+            velocity = vector(0, 0, 0);
+        }
+    }
+    if (eastWallblank == true) {
+        if (localX > 40) {
+            position.x = position.x - 5;
+            velocity = vector(0, 0, 0);
+        }
+    }
+    if (westWallblank == true) {
+        if (localX < -40) {
+            position.x = position.x + 5;
+            velocity = vector(0, 0, 0);
+        }
+    }
+    cam.setPosition(
+        position.x * WORLDSCALE,
+        EYE_HEIGHT * WORLDSCALE,
+        position.z * WORLDSCALE
+    );
+    cam.lookAt((position.x + forward.x * LOOK_DISTANCE) * WORLDSCALE, EYE_HEIGHT * WORLDSCALE, (position.z + forward.z * LOOK_DISTANCE) * WORLDSCALE);
+}
 function movePlayer2(t, dt) {
     if (keyIsDown(LEFT_ARROW)) {
         velocity.x -= 3;
@@ -204,31 +304,31 @@ function movePlayer2(t, dt) {
     }
     if (southWallblank == true) {
         if (localZ > 60) {
-            position.z = position.z - 3;
+            position.z = position.z - 5;
             velocity = vector(0, 0, 0);
         }
     }
     if (eastWall == true) {
         if (localX > 60) {
-            position.x = position.x - 3;
+            position.x = position.x - 5;
             velocity = vector(0, 0, 0);
         }
     }
     if (westWall == true) {
         if (localX < -60) {
-            position.x = position.x + 3;
+            position.x = position.x + 5;
             velocity = vector(0, 0, 0);
         }
     }
     if (eastWallblank == true) {
         if (localX > 60) {
-            position.x = position.x - 3;
+            position.x = position.x - 5;
             velocity = vector(0, 0, 0);
         }
     }
     if (westWallblank == true) {
         if (localX < -60) {
-            position.x = position.x + 3;
+            position.x = position.x + 5;
             velocity = vector(0, 0, 0);
         }
     }
@@ -252,6 +352,7 @@ function drawPlayer() {
     scale(1.5, 1.5, 1.5);
 }
 function end() {
+    push
     scale(0.4);
     translate(0, 0, 0)
     strokeWeight(4);
@@ -267,5 +368,5 @@ function end() {
     line(150, 0, 0, 185, 0, 25);
     line(150, 0, 100, 185, 0, 75);
     line(185, 0, 25, 185, 0, 75);
+    pop();
 }
-
