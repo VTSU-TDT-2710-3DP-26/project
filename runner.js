@@ -3,6 +3,7 @@ import "p5/lib/addons/p5.sound";
 import * as axes from "./utils/axes.js";
 import * as activity from "./project/main.js";
 import showTime from "@/utils/timer";
+import '@/bacmon.js';
 
 // -------------------------------------------------------
 //  The runner — students don't need to touch any of this.
